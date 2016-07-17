@@ -55,7 +55,8 @@ if (program.install) {
                     }
                     return console.log('exec error: ' + error);
                 }
-                fs.appendFile(s.aliasPath, utils.getAlias(moduleName), program.as, function (error) {
+
+                fs.appendFile(s.aliasPath, utils.getAlias(moduleName, program.as), function (error) {
                     if (error) {
                         return console.log(colors.red("Couldn't add alias, aborting"));
                     }
@@ -67,7 +68,6 @@ if (program.install) {
                         return console.log('exec error: ' + error);
                     }
                 });
-
 
                 return console.log(colors.green('Succesfully installed: %s'), colors.white(moduleName));
             });
