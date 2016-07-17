@@ -14,6 +14,9 @@ program
     .version('0.0.1')
     .option('-i, install <module-name>', 'Install the module <module-name>')
     .option('-a, --as <custom-alias-name>', 'Give the a custom alias name <custom-alias-name>')
+
+    .option('-u, uninstall <module-name>', 'Uninstall the module <module-name>')
+
     .parse(process.argv);
 
 var s = {
@@ -34,6 +37,15 @@ var utils = {
         alias = alias.replace("{moduleName}", moduleName);
         return alias;
     }
+};
+
+var source = function() {
+    exec(". " + s.aliasPath, function (error, stdout, stderr) {
+
+        if (error !== null) {
+            return console.log('exec error: ' + error);
+        }
+    });
 };
 
 if (program.install) {
@@ -62,17 +74,42 @@ if (program.install) {
                     }
                 });
 
-                exec(". " + s.aliasPath, function (error, stdout, stderr) {
-
-                    if (error !== null) {
-                        return console.log('exec error: ' + error);
-                    }
-                });
+                source();
 
                 return console.log(colors.green('Succesfully installed: %s'), colors.white(moduleName));
             });
         });
 
+}
+
+if (program.uninstall) {
+    var moduleName = program.uninstall;
+    console.log(colors.green('Uninstalling: %s'), colors.white(moduleName));
+    var path = s.modulesPath + moduleName;
+    console.log(path);
+    exec("rm -rf " + path, function (error, stdout, stderr) {
+        if (error !== null) {
+            return console.log('exec error: ' + error);
+        }
+    });
+    var aliasList = fs.readFileSync('/home/' + process.env.USER + '/.apm_aliases').toString().split("\n");
+    var postion;
+    for(i in aliasList) {
+        if(aliasList[i].includes(moduleName + "/main.sh")){
+            postion = i;
+            break;
+        }
+    }
+    aliasList.splice(postion, 1);
+    var file = fs.createWriteStream(s.aliasPath);
+    file.on('error', function(error) {
+        return console.log(error);
+    });
+    aliasList.forEach(function(alias) {
+        file.write(alias + '\n');
+    });
+    file.end();
+    source();
 }
 
 
