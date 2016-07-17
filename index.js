@@ -7,13 +7,13 @@ var fs = require('fs');
 var request = require('superagent');
 var http = require('http');
 var exec = require('child_process').exec;
-var child;
 var program = require('commander');
 var colors = require('colors');
 
 program
     .version('0.0.1')
-    .option('-i, install <package-name>', 'Add the specified type of cheese <package-name>')
+    .option('-i, install <module-name>', 'Install the module <module-name>')
+    .option('-a, --as <custom-alias-name>', 'Give the a custom alias name <custom-alias-name>')
     .parse(process.argv);
 
 var s = {
@@ -38,7 +38,7 @@ var utils = {
 
 if (program.install) {
     var moduleName = program.install;
-    console.log('Installing: %s', colors.green(moduleName));
+    console.log(colors.green('Installing: %s'), colors.white(moduleName));
     //TODO: replace with dynamic url
     request
         .get("http://localhost:3000/repos/" + moduleName)
@@ -47,7 +47,7 @@ if (program.install) {
                 console.log(error);
                 return console.log(colors.red("The package doesn't seem to exist."));
             }
-            child = exec("git clone " + res.body.url +" /home/$USER/.apm_modules/" + moduleName, function (error, stdout, stderr) {
+            exec("git clone " + res.body.url +" /home/$USER/.apm_modules/" + moduleName, function (error, stdout, stderr) {
 
                 if (error !== null) {
                     if (error.code === 128) {
@@ -55,13 +55,21 @@ if (program.install) {
                     }
                     return console.log('exec error: ' + error);
                 }
-                fs.appendFile(s.aliasPath, utils.getAlias(moduleName), function (error) {
+                fs.appendFile(s.aliasPath, utils.getAlias(moduleName), program.as, function (error) {
                     if (error) {
                         return console.log(colors.red("Couldn't add alias, aborting"));
                     }
                 });
 
-                return console.log('Succesfully installed: %s', colors.green(moduleName));
+                exec(". " + s.aliasPath, function (error, stdout, stderr) {
+
+                    if (error !== null) {
+                        return console.log('exec error: ' + error);
+                    }
+                });
+
+
+                return console.log(colors.green('Succesfully installed: %s'), colors.white(moduleName));
             });
         });
 
